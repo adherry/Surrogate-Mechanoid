@@ -15,10 +15,6 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Deep drill patch left out: Wecardo.TunnulerFix handles mechs operating deep drills. -->
-    <Compile Remove="SpecificWorkJobGiver.MechFriendly\MechFriendly_JobDriver_OperateDeepDrill.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4871" ExcludeAssets="runtime" />
     <!-- The 1.6 Harmony mod ships 0Harmony 2.x. -->
     <PackageReference Include="Lib.Harmony.Ref" Version="2.3.6" ExcludeAssets="runtime" />

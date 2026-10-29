@@ -19,8 +19,6 @@
   <ItemGroup>
     <Compile Include="..\..\1.6\Source\SpecificWorkJobGiver\*.cs" />
     <Compile Include="..\..\1.6\Source\SpecificWorkJobGiver.MechFriendly\*.cs" />
-    <!-- Deep drill patch left out: Wecardo.TunnulerFix handles mechs operating deep drills on 1.7. -->
-    <Compile Remove="..\..\1.6\Source\SpecificWorkJobGiver.MechFriendly\MechFriendly_JobDriver_OperateDeepDrill.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.7.4977-alpha.1" ExcludeAssets="runtime" />
