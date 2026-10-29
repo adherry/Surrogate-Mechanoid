@@ -17,60 +17,41 @@ public static class MechFriendly_JobDriver_OperateDeepDrill
 
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
     {
-        bool shouldModify = ModLister.GetActiveModWithIdentifier("Porio.TunnulerFix") == null;
-        MethodInfo learnMethod = AccessTools.Method(typeof(Pawn_SkillTracker), "Learn");
-
         var code = new List<CodeInstruction>(instructions);
 
-        Label? postEditLabel = null;
-        Label? postLearnLabel = null;
-        int edits = 0;
+        if (ModLister.GetActiveModWithIdentifier("Porio.TunnulerFix") != null)
+            return code;
 
-        for (int i = 0; i < code.Count; i++)
-        {
-            var instr = code[i];
+        MethodInfo learnMethod = AccessTools.Method(typeof(Pawn_SkillTracker), "Learn");
 
-            if (!shouldModify)
-            {
-                yield return instr;
-                continue;
-            }
+        int skillsIdx = code.FindIndex(c => c.opcode == OpCodes.Ldfld && c.operand is FieldInfo fi && fi.Name == "skills");
+        int learnIdx = skillsIdx < 0 ? -1 : code.FindIndex(skillsIdx, c => c.Calls(learnMethod));
 
-            if (instr.opcode == OpCodes.Ldfld && instr.operand is FieldInfo fi && fi.Name == "skills")
-            {
-                // Insert safety check
-                yield return instr; // original ldfld
-                yield return new CodeInstruction(OpCodes.Dup);
-                postEditLabel = il.DefineLabel();
-                postLearnLabel = il.DefineLabel();
-
-                yield return new CodeInstruction(OpCodes.Brtrue_S, postEditLabel.Value);
-                yield return new CodeInstruction(OpCodes.Pop);
-                yield return new CodeInstruction(OpCodes.Br_S, postLearnLabel.Value);
-
-                edits++;
-                continue;
-            }
-
-            if (postEditLabel != null)
-            {
-                instr.labels.Add(postEditLabel.Value);
-                postEditLabel = null;
-            }
-
-            if (postLearnLabel != null)
-            {
-                instr.labels.Add(postLearnLabel.Value);
-                postLearnLabel = null;
-            }
-
-            yield return instr;
-        }
-
-        if (shouldModify && edits != 1)
+        if (skillsIdx < 0 || learnIdx < 0 || learnIdx + 1 >= code.Count)
         {
             Log.Warning("[MechFriendly] Making Deep-drills Mech friendly failed");
+            return code;
         }
+
+        // RimWorld 1.7 already compiles this as skills?.Learn(...) (ldfld skills; dup; brtrue), nothing to do
+        if (code[skillsIdx + 1].opcode == OpCodes.Dup)
+            return code;
+
+        // skills != null: continue with the Learn call; skills == null: drop it and skip past the Learn call
+        Label postEditLabel = il.DefineLabel();
+        Label postLearnLabel = il.DefineLabel();
+        code[skillsIdx + 1].labels.Add(postEditLabel);
+        code[learnIdx + 1].labels.Add(postLearnLabel);
+
+        code.InsertRange(skillsIdx + 1, new[]
+        {
+            new CodeInstruction(OpCodes.Dup),
+            new CodeInstruction(OpCodes.Brtrue, postEditLabel),
+            new CodeInstruction(OpCodes.Pop),
+            new CodeInstruction(OpCodes.Br, postLearnLabel),
+        });
+
+        return code;
     }
 
 }
