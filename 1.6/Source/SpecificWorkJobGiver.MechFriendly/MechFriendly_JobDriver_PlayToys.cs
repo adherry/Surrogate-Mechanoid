@@ -25,6 +25,11 @@ public static class MechFriendly_JobDriver_PlayToys
 
 	private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 	{
+		return MakeInteractionNullSafe(instructions);
+	}
+
+	internal static IEnumerable<CodeInstruction> MakeInteractionNullSafe(IEnumerable<CodeInstruction> instructions)
+	{
 		MethodInfo original = AccessTools.Method(typeof(Pawn_InteractionsTracker), "TryInteractWith");
 		MethodInfo replacement = AccessTools.Method(typeof(MechFriendly_JobDriver_PlayToys), "TryInteractWith");
 		foreach (CodeInstruction t in instructions)
